@@ -1,0 +1,10 @@
+{
+  "name": { "en": "Star Dodge", "de": "Sternen-Ausweicher" },
+  "description": {
+    "en": "Dodge meteors, collect stars. How long can you survive?",
+    "de": "Weiche Meteoren aus, sammle Sterne. Wie lange überlebst du?"
+  },
+  "icon": "🚀",
+  "color": "#3b2f8f",
+  "added": "2026-10-31"
+}

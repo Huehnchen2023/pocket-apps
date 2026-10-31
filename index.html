@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pocket Apps">
+  <meta name="theme-color" content="#0e0f1a">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" type="image/png" href="icons/icon-180.png">
+  <link rel="stylesheet" href="style.css">
+  <title>Pocket Apps</title>
+</head>
+<body>
+  <header>
+    <h1>Pocket Apps</h1>
+    <div class="header-right">
+      <span id="status"></span>
+      <button id="lang" aria-label="Sprache / Language">DE</button>
+    </div>
+  </header>
+
+  <main id="grid" aria-live="polite"></main>
+
+  <p id="install-hint" hidden></p>
+
+  <div id="player" hidden>
+    <iframe id="frame" title="App" allow="autoplay; fullscreen; accelerometer; gyroscope"></iframe>
+    <button id="home" aria-label="Back to launcher">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" fill="currentColor"/>
+      </svg>
+    </button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
