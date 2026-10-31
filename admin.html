@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0e0f1a">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="stylesheet" href="style.css">
+  <title>Pocket Apps – Dashboard</title>
+</head>
+<body class="admin">
+  <header>
+    <a href="./" class="back" data-t="back">← Launcher</a>
+    <button id="lang" aria-label="Sprache / Language">DE</button>
+  </header>
+  <h1 data-t="title">Dashboard</h1>
+
+  <!-- Step 1: first-time setup on this device -->
+  <section id="setup" class="card" hidden>
+    <h2 data-t="setupTitle"></h2>
+    <p class="muted" data-t="setupIntro"></p>
+    <ol class="muted steps" data-t-html="setupSteps"></ol>
+    <label><span data-t="token"></span>
+      <input id="token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…">
+    </label>
+    <label><span data-t="pin"></span>
+      <input id="pin1" type="password" inputmode="numeric" autocomplete="new-password">
+    </label>
+    <label><span data-t="pinRepeat"></span>
+      <input id="pin2" type="password" inputmode="numeric" autocomplete="new-password">
+    </label>
+    <button id="save-token" class="primary" data-t="saveToken"></button>
+    <p id="setup-msg" class="msg"></p>
+  </section>
+
+  <!-- Step 2: unlock with PIN -->
+  <section id="unlock" class="card" hidden>
+    <h2 data-t="unlockTitle"></h2>
+    <label><span data-t="pin"></span>
+      <input id="pin" type="password" inputmode="numeric" autocomplete="current-password">
+    </label>
+    <button id="unlock-btn" class="primary" data-t="unlock"></button>
+    <p id="unlock-msg" class="msg"></p>
+    <button id="forget" class="link" data-t="forget"></button>
+  </section>
+
+  <!-- Step 3: upload -->
+  <section id="upload" class="card" hidden>
+    <h2 data-t="uploadTitle"></h2>
+    <p class="muted" data-t="uploadIntro"></p>
+
+    <label class="drop" id="drop">
+      <input id="files" type="file" multiple accept=".html,.htm,.zip,.js,.css,.png,.jpg,.jpeg,.gif,.webp,.svg,.mp3,.wav,.ogg,.json,.txt">
+      <span data-t="pick"></span>
+    </label>
+    <ul id="file-list" class="muted"></ul>
+
+    <div id="details" hidden>
+      <div class="row">
+        <label><span data-t="nameEn"></span><input id="name-en"></label>
+        <label><span data-t="nameDe"></span><input id="name-de"></label>
+      </div>
+      <div class="row">
+        <label><span data-t="descEn"></span><input id="desc-en"></label>
+        <label><span data-t="descDe"></span><input id="desc-de"></label>
+      </div>
+      <div class="row">
+        <label class="small"><span data-t="emoji"></span><input id="emoji" value="🎮" maxlength="8"></label>
+        <label class="small"><span data-t="color"></span><input id="color" type="color" value="#7c6cff"></label>
+        <label><span data-t="iconImg"></span><input id="icon-file" type="file" accept=".png,.jpg,.jpeg,.webp"></label>
+      </div>
+      <label><span data-t="id"></span><input id="app-id" autocapitalize="off" spellcheck="false"></label>
+      <p id="id-note" class="msg"></p>
+      <button id="upload-btn" class="primary" data-t="uploadBtn"></button>
+    </div>
+
+    <pre id="log" hidden></pre>
+    <button id="lock" class="link" data-t="lock"></button>
+  </section>
+
+  <script src="admin.js"></script>
+</body>
+</html>
