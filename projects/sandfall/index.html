@@ -1,0 +1,1171 @@
+<title>Sandfall</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Figtree:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one dusk-lit hourglass well in the middle, stats on the left, next piece + keys on the right; stacks on phones with a touch pad below. Deliberately single dark theme. */
+:root {
+  --bg: #221d33;
+  --panel: #2b2540;
+  --well: #17141f;
+  --line: #3d3556;
+  --fg: #f1e6d2;
+  --muted: #a99fb8;
+  --sand: #e8c27a;
+  --font-display: "Bungee", "Impact", "Arial Black", sans-serif;
+  --font-body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+  --bh: min(78vh, 700px, calc((100vw - 32px) * 2));
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: radial-gradient(120% 60% at 50% 110%, #3a2c3f 0%, var(--bg) 60%) var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  overflow-x: hidden;
+}
+.app {
+  min-height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding-block: 20px 24px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+header { text-align: center; }
+h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(28px, 5vw, 42px);
+  letter-spacing: 0.04em;
+  margin: 0;
+  line-height: 1;
+}
+h1 span:nth-child(4n+1) { color: #e9585c; }
+h1 span:nth-child(4n+2) { color: #f0b43c; }
+h1 span:nth-child(4n+3) { color: #3cbf9b; }
+h1 span:nth-child(4n+4) { color: #5b8cec; }
+.tagline { margin: 8px 0 0; color: var(--muted); font-size: 14px; text-wrap: balance; }
+
+.stage {
+  display: grid;
+  grid-template-columns: 170px auto 170px;
+  grid-template-areas: "stats well next";
+  gap: 28px;
+  align-items: start;
+  justify-content: center;
+  max-width: 100%;
+}
+.side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.stats { grid-area: stats; }
+.nextcol { grid-area: next; }
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+.label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 26px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.value.small { font-size: 20px; }
+#chainCard .value { color: var(--sand); }
+.bar { height: 6px; margin-top: 8px; border-radius: 3px; background: var(--well); overflow: hidden; }
+.bar[hidden] { display: none; }
+.bar i { display: block; height: 100%; width: 0; background: var(--sand); }
+.blink { animation: blink 0.5s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0.35; } }
+
+.well {
+  grid-area: well;
+  position: relative;
+  height: var(--bh);
+  aspect-ratio: 1 / 2;
+  max-width: 100%;
+  border: 3px solid var(--line);
+  border-top-color: transparent;
+  border-radius: 0 0 8px 8px;
+  background: var(--well);
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+  touch-action: none;
+}
+#board {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  border-radius: 0 0 5px 5px;
+}
+#next {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  margin-top: 8px;
+}
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  gap: 12px;
+  padding: 20px;
+  overflow-y: auto;
+  text-align: center;
+  background: rgba(23, 20, 31, 0.82);
+  backdrop-filter: blur(2px);
+}
+.overlay[hidden], .overlay [hidden] { display: none; }
+.overlay h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(24px, 4vw, 34px);
+  margin: 0;
+  color: var(--sand);
+}
+.overlay p { margin: 0; max-width: 26ch; line-height: 1.5; color: var(--fg); }
+.overlay .final { font-family: var(--font-mono); font-size: 22px; font-weight: 600; }
+.modes { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 260px; }
+.mode {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 3px 8px;
+  padding: 10px 12px;
+  text-align: left;
+  font: inherit;
+  color: var(--fg);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.mode:hover { background: var(--line); }
+.mode:focus-visible { outline: 3px solid var(--fg); outline-offset: 2px; background: var(--line); }
+.mname { font-family: var(--font-display); font-size: 15px; color: var(--accent); }
+.mbest { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.mdesc { grid-column: 1 / -1; font-size: 12px; line-height: 1.35; color: var(--muted); }
+.btn {
+  font: 700 15px var(--font-body);
+  letter-spacing: 0.04em;
+  color: #241c14;
+  background: var(--sand);
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 26px;
+  cursor: pointer;
+  margin-top: 6px;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn.ghost { color: var(--fg); background: transparent; box-shadow: inset 0 0 0 1px var(--line); margin-top: 0; }
+.btn.ghost:hover { filter: none; background: var(--line); }
+.btn:focus-visible, .pad button:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
+.restart { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 9px 14px; font-size: 13px; }
+.restart svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.popup {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: clamp(16px, 2.6vw, 22px);
+  color: var(--fg);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  white-space: nowrap;
+  animation: rise 1.1s ease-out forwards;
+}
+@keyframes rise {
+  0% { opacity: 0; transform: translate(-50%, -30%) scale(0.8); }
+  15% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+  100% { opacity: 0; transform: translate(-50%, -170%) scale(1); }
+}
+.keys { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; font-size: 13px; margin-top: 8px; }
+kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--well);
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  justify-self: start;
+}
+.pad { display: none; gap: 12px; justify-content: center; flex-wrap: wrap; touch-action: none; user-select: none; -webkit-user-select: none; }
+.pad button {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--fg);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  touch-action: none;
+}
+.pad button:active, .pad button.on { background: var(--line); }
+.pad svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+
+@media (max-width: 720px) {
+  :root { --bh: min(58vh, calc((100vw - 32px) * 2)); }
+  .app { gap: 12px; padding-block: 12px 16px; }
+  .tagline { display: none; }
+  .stage {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "stats next" "well well";
+    gap: 12px;
+    width: 100%;
+  }
+  .well { justify-self: center; }
+  .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .card { padding: 8px 10px; }
+  .value { font-size: 18px; }
+  .value.small { font-size: 16px; }
+  .restart { grid-column: 1 / -1; padding: 7px 12px; }
+  .nextcol { width: 96px; gap: 8px; }
+  .help { display: none; }
+  .pad { display: flex; }
+  .overlay { padding: 12px; gap: 8px; }
+  .mode { padding: 7px 9px; }
+  .mname { font-size: 13px; }
+  .mdesc { font-size: 11px; }
+}
+@media (hover: none) {
+  .pad { display: flex; }
+  .help { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .popup { animation-duration: 0.01s; animation-delay: 0.9s; animation-fill-mode: forwards; }
+  .blink { animation: none; }
+}
+</style>
+
+<div class="app">
+  <header>
+    <h1 aria-label="Sandfall"><span>S</span><span>A</span><span>N</span><span>D</span><span>F</span><span>A</span><span>L</span><span>L</span></h1>
+    <p class="tagline" id="tagline">Blocks turn to sand when they land. Bridge one color from wall to wall to wash it away.</p>
+  </header>
+
+  <main class="stage">
+    <aside class="side stats" aria-label="Stats">
+      <div class="card"><div class="label">Score</div><div class="value" id="score">0</div></div>
+      <div class="card"><div class="label">Best</div><div class="value small" id="best">0</div></div>
+      <div class="card"><div class="label">Level</div><div class="value small" id="level">1</div></div>
+      <div class="card"><div class="label" id="clearsLabel">Bridges</div><div class="value small" id="clears">0</div></div>
+      <button class="btn ghost restart" id="restartBtn" type="button" aria-label="Restart: back to main menu"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v5h5"/></svg>Restart</button>
+    </aside>
+
+    <div class="well" id="well">
+      <canvas id="board" width="80" height="160" aria-label="Game board"></canvas>
+      <div class="overlay" id="overlay">
+        <h2 id="ovTitle">Sandfall</h2>
+        <p id="ovText">Choose a mode.</p>
+        <div class="modes" id="menu">
+          <button class="mode" type="button" data-mode="classic" style="--accent: #e8c27a"><span class="mname">Classic</span><span class="mbest"></span><span class="mdesc">Bridge one color from wall to wall to clear it.</span></button>
+          <button class="mode" type="button" data-mode="tetris" style="--accent: #a565d8"><span class="mname">Tetris</span><span class="mbest"></span><span class="mdesc">Solid blocks and full lines, but loose blocks drop into any gap below them.</span></button>
+          <button class="mode" type="button" data-mode="quicksand" style="--accent: #d39a4e"><span class="mname">Quicksand</span><span class="mbest"></span><span class="mdesc">The floor keeps rising with fresh sand. Keep it below the top.</span></button>
+          <button class="mode" type="button" data-mode="sandstorm" style="--accent: #7fc4d8"><span class="mname">Sandstorm</span><span class="mbest"></span><span class="mdesc">Wind gusts blow the sand and your piece sideways.</span></button>
+        </div>
+        <div class="final" id="ovScore" hidden></div>
+        <button class="btn" id="ovBtn" type="button" hidden>Play</button>
+        <button class="btn ghost" id="ovRestart" type="button" hidden>Restart</button>
+      </div>
+    </div>
+
+    <aside class="side nextcol">
+      <div class="card"><div class="label">Next</div><canvas id="next" width="32" height="16" aria-label="Next piece"></canvas></div>
+      <div class="card" id="chainCard"><div class="label">Chain</div><div class="value small" id="chain">–</div></div>
+      <div class="card" id="modeCard" hidden>
+        <div class="label" id="modeLabel"></div>
+        <div class="value small" id="modeValue"></div>
+        <div class="bar" id="modeBar" hidden><i id="modeFill"></i></div>
+      </div>
+      <div class="card help">
+        <div class="label">Keys</div>
+        <div class="keys">
+          <kbd>← →</kbd><span>Move</span>
+          <kbd>↑ / X</kbd><span>Rotate</span>
+          <kbd>Z</kbd><span>Rotate back</span>
+          <kbd>↓</kbd><span>Soft drop</span>
+          <kbd>Space</kbd><span>Hard drop</span>
+          <kbd>P</kbd><span>Pause</span>
+          <kbd>R</kbd><span>Restart</span>
+          <kbd>1–4</kbd><span>Pick mode</span>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <div class="pad" id="pad">
+    <button type="button" id="padLeft" data-act="left" aria-label="Move left"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button type="button" id="padRotate" data-act="rotate" aria-label="Rotate"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 1-3-6.2"/><path d="M20 4v5h-5"/></svg></button>
+    <button type="button" id="padDown" data-act="down" aria-label="Soft drop"><svg viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></svg></button>
+    <button type="button" id="padDrop" data-act="drop" aria-label="Hard drop"><svg viewBox="0 0 24 24"><path d="M6 6l6 6 6-6"/><path d="M6 12l6 6 6-6"/></svg></button>
+    <button type="button" id="padRight" data-act="right" aria-label="Move right"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ---- Board geometry: each tetromino block is B×B sand grains ----
+  const B = 8, COLS = 10, ROWS = 20, W = COLS * B, H = ROWS * B, N = W * H;
+  const grid = new Uint8Array(N);   // 0 empty, else color index + 1
+  const shade = new Uint8Array(N);  // texture shade per grain
+  const mark = new Uint8Array(N);   // grains currently being cleared
+  const pmask = new Uint8Array(N);  // falling piece occupancy (sand avoids it)
+  const vis = new Uint32Array(N);
+  const stack = new Int32Array(N);
+  const comp = new Int32Array(N);
+  let visStamp = 0;
+
+  const SAND_DT = 1 / 100;     // sand ticks per second
+  const MOVE_SPEED = 60;       // grains per second while a direction is held
+  const DAS = 0.12;            // delay before held movement repeats
+  const SOFT = 110;            // soft drop grains per second
+  const LOCK_DELAY = 0.3;
+  const CLEAR_TIME = 0.55;
+  const RISE = 4;              // quicksand: grains the floor rises each time
+  const WIND_P = 0.12;         // sandstorm: chance an exposed grain drifts per tick
+  const NUDGE_DT = 0.14;       // sandstorm: seconds between wind pushes on the piece
+  const CELL_SPEED = 14;       // tetris: cells per second while a direction is held
+  const GRAV_DT = 0.04;        // tetris: seconds per one-cell drop of loose blocks
+  const LINE_SCORE = [0, 100, 300, 500, 800];
+
+  // ---- Modes ----
+  const MODES = {
+    classic: {
+      tag: "Blocks turn to sand when they land. Bridge one color from wall to wall to wash it away.",
+      over: "The sand reached the top.",
+    },
+    tetris: {
+      tag: "Blocks stay solid, but any block with space below it drops down. Fill whole lines to clear them.",
+      over: "The blocks reached the top.",
+    },
+    quicksand: {
+      tag: "The floor keeps rising with fresh sand. Clear bridges faster than it buries you.",
+      over: "The quicksand swallowed the well.",
+    },
+    sandstorm: {
+      tag: "Gusts blow the sand and your piece sideways. Read the wind and build your bridges anyway.",
+      over: "Buried by the storm.",
+    },
+  };
+  const MODE_ORDER = ["classic", "tetris", "quicksand", "sandstorm"];
+
+  // ---- Colors ----
+  const BASE = [[0xe2, 0x4b, 0x4f], [0xf0, 0xb4, 0x3c], [0x2f, 0xb0, 0x8f], [0x4c, 0x7c, 0xe0], [0xb0, 0x6a, 0xd9]];
+  const SH = [0.84, 0.9, 0.95, 1, 1.05, 1.1, 0.66, 0.72]; // 6,7 = block edges
+  const rgba = (r, g, b, a = 255) => ((a << 24) | (b << 16) | (g << 8) | r) >>> 0;
+  function makePal(bases) {
+    const pal = new Uint32Array(bases.length * 8);
+    bases.forEach((c, ci) => SH.forEach((f, si) => {
+      pal[ci * 8 + si] = rgba(...c.map(v => Math.min(255, Math.round(v * f))));
+    }));
+    return pal;
+  }
+  const PAL_CLASSIC = makePal(BASE);
+  // Tetris: one fixed color per shape, in SHAPES order (I O T S Z J L).
+  const PAL_TETRIS = makePal([[0x3c, 0xc8, 0xd8], [0xf0, 0xc4, 0x3c], [0xa5, 0x65, 0xd8], [0x4c, 0xc0, 0x4a], [0xe2, 0x48, 0x4f], [0x4c, 0x74, 0xe0], [0xf0, 0x88, 0x3c]]);
+  let PAL = PAL_CLASSIC;
+
+  const BG = rgba(0x17, 0x14, 0x1f), GUIDE = rgba(0x1b, 0x18, 0x25);
+  const WHITE = rgba(255, 249, 232), GHOST = rgba(0x55, 0x4c, 0x6c);
+  const STREAK = rgba(0x3a, 0x34, 0x50), STREAK_HEAD = rgba(0x5c, 0x53, 0x7a);
+  const BGROW = new Uint32Array(W);
+  for (let x = 0; x < W; x++) BGROW[x] = (x % B === 0 && x > 0) ? GUIDE : BG;
+
+  // ---- Tetrominoes (cells inside an n×n box) ----
+  const SHAPES = [
+    { n: 4, c: [[0, 1], [1, 1], [2, 1], [3, 1]] }, // I
+    { n: 2, c: [[0, 0], [1, 0], [0, 1], [1, 1]] }, // O
+    { n: 3, c: [[1, 0], [0, 1], [1, 1], [2, 1]] }, // T
+    { n: 3, c: [[1, 0], [2, 0], [0, 1], [1, 1]] }, // S
+    { n: 3, c: [[0, 0], [1, 0], [1, 1], [2, 1]] }, // Z
+    { n: 3, c: [[0, 0], [0, 1], [1, 1], [2, 1]] }, // J
+    { n: 3, c: [[2, 0], [0, 1], [1, 1], [2, 1]] }, // L
+  ];
+
+  // ---- DOM ----
+  const $ = id => document.getElementById(id);
+  const board = $("board"), ctx = board.getContext("2d");
+  const img = ctx.createImageData(W, H), px = new Uint32Array(img.data.buffer);
+  const nextCv = $("next"), nctx = nextCv.getContext("2d");
+  const nimg = nctx.createImageData(4 * B, 2 * B), npx = new Uint32Array(nimg.data.buffer);
+  const well = $("well"), overlay = $("overlay");
+  const modeButtons = [...document.querySelectorAll(".mode")];
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---- State ----
+  let mode = "classic";
+  let status = "ready", score = 0, best = 0, level = 1, clears = 0, chain = 0, chainWindow = 0;
+  let cur = null, nxt = null, bag = [];
+  let fallAcc = 0, lockT = 0, moveAcc = 0, sandAcc = 0, checkT = 0, clearing = null, flashT = 0;
+  let riseT = 0, gravT = 0;
+  let wind = { phase: "calm", t: 8, dir: 0, nextDir: 1 }, nudgeT = 0;
+  const streaks = [];
+  const held = { left: false, right: false, down: false };
+
+  try { if (MODES[localStorage.getItem("sandfall-mode")]) mode = localStorage.getItem("sandfall-mode"); } catch (e) {}
+
+  const numColors = () => (level >= 6 ? 5 : 4);
+  const fallSpeed = () => 10 + (level - 1) * 5;
+  const riseEvery = () => Math.max(4, 11 - level * 0.6);
+  const bestKey = m => (m === "classic" ? "sandfall-best" : `sandfall-best-${m}`);
+  function loadBest(m) {
+    try { return +localStorage.getItem(bestKey(m)) || 0; } catch (e) { return 0; }
+  }
+
+  function applyMode() {
+    PAL = mode === "tetris" ? PAL_TETRIS : PAL_CLASSIC;
+    best = loadBest(mode);
+    $("tagline").textContent = MODES[mode].tag;
+    $("clearsLabel").textContent = mode === "tetris" ? "Lines" : "Bridges";
+    $("modeCard").hidden = mode === "classic" || mode === "tetris";
+    $("modeBar").hidden = mode !== "quicksand";
+    $("modeLabel").textContent = { quicksand: "Floor rises", sandstorm: "Wind" }[mode] || "";
+    $("modeValue").style.color = "";
+    try { localStorage.setItem("sandfall-mode", mode); } catch (e) {}
+  }
+
+  function texture() {
+    const t = new Uint8Array(B * B);
+    for (let y = 0; y < B; y++) for (let x = 0; x < B; x++) {
+      const edge = x === 0 || y === 0 || x === B - 1 || y === B - 1;
+      t[y * B + x] = edge ? 6 + (Math.random() < 0.5 ? 0 : 1) : (Math.random() * 6) | 0;
+    }
+    return t;
+  }
+
+  // Tetris: solid bevelled block, light top-left and dark bottom-right.
+  const BLOCK = new Uint8Array(B * B);
+  for (let y = 0; y < B; y++) for (let x = 0; x < B; x++) {
+    BLOCK[y * B + x] = x === B - 1 || y === B - 1 ? 6 : x === 0 || y === 0 ? 5 : 3;
+  }
+
+  function newPiece() {
+    if (!bag.length) {
+      bag = [0, 1, 2, 3, 4, 5, 6];
+      for (let i = bag.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [bag[i], bag[j]] = [bag[j], bag[i]]; }
+    }
+    const si = bag.pop(), s = SHAPES[si];
+    const tetris = mode === "tetris";
+    const cells = s.c.map(([x, y]) => ({ x, y, sh: tetris ? BLOCK : texture() }));
+    const minY = Math.min(...cells.map(c => c.y));
+    const color = tetris ? si : (Math.random() * numColors()) | 0;
+    return { n: s.n, cells, color, px: Math.floor((COLS - s.n) / 2) * B, py: -minY * B };
+  }
+
+  function collides(cells, x0p, y0p) {
+    for (const c of cells) {
+      const x0 = x0p + c.x * B, y0 = y0p + c.y * B;
+      if (x0 < 0 || x0 + B > W || y0 + B > H) return true;
+      for (let gy = 0; gy < B; gy++) {
+        const y = y0 + gy;
+        if (y < 0) continue;
+        const row = y * W + x0;
+        for (let gx = 0; gx < B; gx++) if (grid[row + gx]) return true;
+      }
+    }
+    return false;
+  }
+
+  function spawn() {
+    cur = nxt || newPiece();
+    nxt = newPiece();
+    fallAcc = 0; lockT = 0;
+    drawNext();
+    if (collides(cur.cells, cur.px, cur.py)) gameOver();
+  }
+
+  // Tetris pieces move a whole cell at a time; sand pieces move grain by grain.
+  function tryMove(dir) {
+    const dx = mode === "tetris" ? dir * B : dir;
+    if (!cur || collides(cur.cells, cur.px + dx, cur.py)) return false;
+    cur.px += dx;
+    return true;
+  }
+
+  const moveSpeed = () => (mode === "tetris" ? CELL_SPEED : MOVE_SPEED);
+  function pressMove(dir) {
+    if (status !== "play" || !cur) return;
+    tryMove(dir);
+    if (mode !== "tetris") tryMove(dir);
+    moveAcc = -DAS * moveSpeed();
+  }
+
+  function rotate(dir) {
+    if (status !== "play" || !cur || cur.n === 2) return;
+    const n = cur.n;
+    const cells = cur.cells.map(c => dir > 0 ? { x: n - 1 - c.y, y: c.x, sh: c.sh } : { x: c.y, y: n - 1 - c.x, sh: c.sh });
+    const kicks = mode === "tetris"
+      ? { dy: [0, -B], dx: [0, -B, B, -2 * B, 2 * B] }
+      : { dy: [0, -2, -4, -8], dx: [0, -2, 2, -4, 4, -8, 8, -12, 12] };
+    for (const dy of kicks.dy) for (const dx of kicks.dx) {
+      if (!collides(cells, cur.px + dx, cur.py + dy)) {
+        cur.cells = cells; cur.px += dx; cur.py += dy; lockT = 0;
+        return;
+      }
+    }
+  }
+
+  function dropY() {
+    let y = cur.py;
+    while (!collides(cur.cells, cur.px, y + 1)) y++;
+    return y;
+  }
+
+  function hardDrop() {
+    if (status !== "play" || !cur) return;
+    const y = dropY();
+    score += Math.floor((y - cur.py) / B) * 2;
+    cur.py = y;
+    lock();
+  }
+
+  function lock() {
+    let over = false;
+    for (const c of cur.cells) {
+      const x0 = cur.px + c.x * B, y0 = cur.py + c.y * B;
+      for (let ly = 0; ly < B; ly++) {
+        const y = y0 + ly;
+        if (y < 0) { over = true; continue; }
+        for (let lx = 0; lx < B; lx++) {
+          const i = y * W + x0 + lx;
+          grid[i] = cur.color + 1;
+          shade[i] = c.sh[ly * B + lx];
+        }
+      }
+    }
+    cur = null;
+    if (over) gameOver();
+    else if (mode === "tetris") { chain = 0; gravT = 0; } // loose blocks settle before the next spawn
+    else spawn();
+  }
+
+  // ---- Tetris: per-cell gravity and line clears (the stack stays cell-aligned) ----
+  const cellAt = (cx, cy) => grid[cy * B * W + cx * B];
+
+  // Drop every block that has an empty cell below it by one row; bottom-up so columns fall together.
+  function dropCells() {
+    let moved = false;
+    for (let cy = ROWS - 2; cy >= 0; cy--) for (let cx = 0; cx < COLS; cx++) {
+      if (!cellAt(cx, cy) || cellAt(cx, cy + 1)) continue;
+      for (let ly = 0; ly < B; ly++) {
+        const from = (cy * B + ly) * W + cx * B, to = from + B * W;
+        grid.copyWithin(to, from, from + B); shade.copyWithin(to, from, from + B);
+        grid.fill(0, from, from + B);
+      }
+      moved = true;
+    }
+    return moved;
+  }
+
+  function findLines() {
+    let lines = 0, sumY = 0;
+    for (let cy = 0; cy < ROWS; cy++) {
+      let full = true;
+      for (let cx = 0; cx < COLS && full; cx++) if (!cellAt(cx, cy)) full = false;
+      if (!full) continue;
+      mark.fill(1, cy * B * W, (cy + 1) * B * W);
+      lines++; sumY += cy * B + B / 2;
+    }
+    return lines ? { lines, y: sumY / lines } : null;
+  }
+
+  function startLineClear(found) {
+    chain++;
+    clears += found.lines;
+    const gained = LINE_SCORE[found.lines] * level * chain;
+    score += gained;
+    level = Math.min(15, 1 + Math.floor(clears / 8));
+    clearing = { t: 0 };
+    popup(`+${gained.toLocaleString()}`, found.y);
+    if (found.lines === 4) popup("Tetris!", found.y - 14);
+    else if (chain > 1) popup(`Cascade ×${chain}`, found.y - 14);
+  }
+
+  function updateTetris(dt) {
+    if (clearing) {
+      clearing.t += dt;
+      if (clearing.t >= CLEAR_TIME) finishClear();
+      return;
+    }
+    if (cur) { movePiece(dt); return; }
+    gravT += dt;
+    if (gravT < GRAV_DT) return;
+    gravT = 0;
+    if (dropCells()) return;
+    const found = findLines();
+    if (found) startLineClear(found); else spawn();
+  }
+
+  // ---- Sand physics ----
+  let parity = 0;
+  function sandStep() {
+    parity ^= 1;
+    for (let y = H - 2; y >= 0; y--) {
+      const ltr = ((y + parity) & 1) === 0;
+      const row = y * W;
+      for (let k = 0; k < W; k++) {
+        const x = ltr ? k : W - 1 - k;
+        const i = row + x;
+        const c = grid[i];
+        if (!c || mark[i]) continue;
+        const b = i + W;
+        if (!grid[b] && !pmask[b]) { move(i, b); continue; }
+        const d = Math.random() < 0.5 ? -1 : 1;
+        for (let t = 0; t < 2; t++) {
+          const dd = t ? -d : d, nx = x + dd;
+          if (nx < 0 || nx >= W) continue;
+          const j = b + dd, s = i + dd;
+          if (!grid[j] && !pmask[j] && !grid[s] && !pmask[s]) { move(i, j); break; }
+        }
+      }
+    }
+  }
+  function move(i, j) {
+    grid[j] = grid[i]; shade[j] = shade[i];
+    grid[i] = 0;
+  }
+
+  // Sandstorm: grains open to the sky drift one step downwind (bottom-up so drift doesn't cascade).
+  function windPass(dir) {
+    for (let y = H - 1; y >= 0; y--) {
+      const row = y * W;
+      for (let k = 0; k < W - 1; k++) {
+        const x = dir > 0 ? W - 2 - k : 1 + k;
+        const i = row + x;
+        if (!grid[i] || mark[i] || (y > 0 && grid[i - W])) continue;
+        const j = i + dir;
+        if (grid[j] || pmask[j] || Math.random() >= WIND_P) continue;
+        move(i, j);
+      }
+    }
+  }
+
+  function buildMask() {
+    pmask.fill(0);
+    if (!cur) return;
+    for (const c of cur.cells) {
+      const x0 = cur.px + c.x * B, y0 = cur.py + c.y * B;
+      for (let ly = 0; ly < B; ly++) {
+        const y = y0 + ly;
+        if (y < 0 || y >= H) continue;
+        pmask.fill(1, y * W + x0, y * W + x0 + B);
+      }
+    }
+  }
+
+  // ---- Bridge detection: flood fill each color from the left wall ----
+  function findBridges() {
+    visStamp++;
+    let total = 0, sumY = 0;
+    for (let y = 0; y < H; y++) {
+      const start = y * W, c = grid[start];
+      if (!c || mark[start] || vis[start] === visStamp) continue;
+      let sp = 0, cn = 0, touches = false;
+      stack[sp++] = start; vis[start] = visStamp;
+      while (sp) {
+        const j = stack[--sp];
+        comp[cn++] = j;
+        const jx = j % W, jy = (j - jx) / W;
+        if (jx === W - 1) touches = true;
+        for (let oy = -1; oy <= 1; oy++) {
+          const ny = jy + oy;
+          if (ny < 0 || ny >= H) continue;
+          for (let ox = -1; ox <= 1; ox++) {
+            const nx = jx + ox;
+            if ((!ox && !oy) || nx < 0 || nx >= W) continue;
+            const n = ny * W + nx;
+            if (vis[n] !== visStamp && grid[n] === c && !mark[n]) { vis[n] = visStamp; stack[sp++] = n; }
+          }
+        }
+      }
+      if (touches) {
+        for (let k = 0; k < cn; k++) { mark[comp[k]] = 1; sumY += (comp[k] / W) | 0; }
+        total += cn;
+      }
+    }
+    return total ? { count: total, y: sumY / total } : null;
+  }
+
+  function startClear(found) {
+    chain = chainWindow > 0 ? chain + 1 : 1;
+    clears++;
+    const gained = found.count * level * chain;
+    score += gained;
+    level = Math.min(15, 1 + Math.floor(clears / 4));
+    clearing = { t: 0 };
+    popup(`+${gained.toLocaleString()}`, found.y);
+    if (chain > 1) popup(`Chain ×${chain}`, found.y - 14);
+  }
+
+  function finishClear() {
+    for (let i = 0; i < N; i++) if (mark[i]) { mark[i] = 0; grid[i] = 0; }
+    clearing = null;
+    chainWindow = 1.4;
+  }
+
+  // ---- Quicksand: push everything up and fill the floor with mixed-color runs ----
+  function riseFloor() {
+    for (let i = 0; i < RISE * W; i++) if (grid[i]) { gameOver(); return; }
+    grid.copyWithin(0, RISE * W); shade.copyWithin(0, RISE * W); mark.copyWithin(0, RISE * W);
+    const nc = numColors();
+    let prev = -1;
+    for (let x = 0; x < W;) {
+      let len = 5 + ((Math.random() * 10) | 0);
+      if (W - x - len < 5) len = W - x; // no sliver runs at the right wall
+      let c;
+      do c = (Math.random() * nc) | 0; while (c === prev);
+      prev = c;
+      for (let y = H - RISE; y < H; y++) for (let xx = x; xx < x + len; xx++) {
+        const i = y * W + xx;
+        grid[i] = c + 1; shade[i] = (Math.random() * 6) | 0; mark[i] = 0;
+      }
+      x += len;
+    }
+    if (cur) for (let k = 0; k < H && collides(cur.cells, cur.px, cur.py); k++) cur.py--;
+  }
+
+  // ---- Sandstorm: calm → warning → gust cycle ----
+  function updateWind(dt) {
+    wind.t -= dt;
+    if (wind.t <= 0) {
+      if (wind.phase === "calm") {
+        wind.phase = "warn"; wind.t = 1.5;
+        wind.nextDir = Math.random() < 0.5 ? -1 : 1;
+        popup(wind.nextDir > 0 ? "Gust →" : "← Gust", H * 0.28);
+      } else if (wind.phase === "warn") {
+        wind.phase = "gust"; wind.dir = wind.nextDir;
+        wind.t = 2.5 + Math.random() * 1.5 + Math.min(2, level * 0.15);
+        nudgeT = 0;
+      } else {
+        wind.phase = "calm"; wind.dir = 0;
+        wind.t = Math.max(4, 9 - level * 0.3) + Math.random() * 3;
+      }
+    }
+    if (wind.phase !== "gust") return;
+    for (const s of streaks) {
+      s.x += wind.dir * s.v * dt;
+      if (s.x > W + s.len) { s.x = -s.len; s.y = (Math.random() * H) | 0; }
+      if (s.x < -s.len) { s.x = W + s.len; s.y = (Math.random() * H) | 0; }
+    }
+    if (!cur) return;
+    nudgeT += dt;
+    while (nudgeT >= NUDGE_DT) { nudgeT -= NUDGE_DT; tryMove(wind.dir); }
+  }
+
+  function resetWind() {
+    wind = { phase: "calm", t: 6 + Math.random() * 2, dir: 0, nextDir: 1 };
+    nudgeT = 0;
+    streaks.length = 0;
+    for (let k = 0; k < 26; k++) streaks.push({ x: Math.random() * W, y: (Math.random() * H) | 0, len: 6 + ((Math.random() * 12) | 0), v: 60 + Math.random() * 70 });
+  }
+
+  function popup(text, gy) {
+    const el = document.createElement("div");
+    el.className = "popup";
+    el.textContent = text;
+    el.style.top = `${Math.max(6, Math.min(94, (gy / H) * 100))}%`;
+    well.appendChild(el);
+    el.addEventListener("animationend", () => el.remove());
+    setTimeout(() => el.remove(), 2500);
+  }
+
+  // ---- Game flow ----
+  function saveBest() {
+    if (score > best) {
+      best = score;
+      try { localStorage.setItem(bestKey(mode), String(best)); } catch (e) {}
+    }
+  }
+
+  function clearBoard() {
+    grid.fill(0); shade.fill(0); mark.fill(0); pmask.fill(0);
+    for (const el of well.querySelectorAll(".popup")) el.remove();
+  }
+
+  // Abandon the current run (keeping a new best) and go back to the main menu.
+  function restart() {
+    if (status === "play" || status === "pause") saveBest();
+    clearBoard();
+    score = 0; level = 1; clears = 0; chain = 0; chainWindow = 0;
+    cur = null; nxt = null; clearing = null;
+    held.left = held.right = held.down = false;
+    status = "ready";
+    drawNext();
+    showOverlay();
+  }
+
+  function newGame(m = mode) {
+    mode = m;
+    applyMode();
+    clearBoard();
+    score = 0; level = 1; clears = 0; chain = 0; chainWindow = 0;
+    bag = []; nxt = null; clearing = null;
+    sandAcc = 0; checkT = 0; moveAcc = 0; riseT = 0; gravT = 0;
+    resetWind();
+    held.left = held.right = held.down = false;
+    status = "play";
+    spawn();
+    showOverlay();
+  }
+
+  function gameOver() {
+    status = "over";
+    cur = null;
+    saveBest();
+    showOverlay();
+  }
+
+  function togglePause() {
+    if (status === "play") status = "pause";
+    else if (status === "pause") status = "play";
+    else return;
+    held.left = held.right = held.down = false;
+    showOverlay();
+  }
+
+  function showOverlay() {
+    overlay.hidden = status === "play";
+    const t = $("ovTitle"), p = $("ovText"), s = $("ovScore"), b = $("ovBtn"), r = $("ovRestart");
+    const menu = status === "ready";
+    $("menu").hidden = !menu;
+    b.hidden = menu;
+    s.hidden = status !== "over";
+    r.hidden = menu;
+    if (menu) {
+      t.textContent = "Sandfall";
+      p.textContent = "Choose a mode.";
+      $("tagline").textContent = MODES[mode].tag;
+      for (const btn of modeButtons) btn.querySelector(".mbest").textContent = `Best ${loadBest(btn.dataset.mode).toLocaleString()}`;
+    } else if (status === "pause") {
+      t.textContent = "Paused";
+      p.textContent = "The sand waits for you.";
+      b.textContent = "Resume";
+      r.textContent = "Restart";
+    } else if (status === "over") {
+      t.textContent = "Buried";
+      p.textContent = MODES[mode].over;
+      s.textContent = `${score.toLocaleString()} points`;
+      b.textContent = "Play again";
+      r.textContent = "Main menu";
+    }
+    if (overlay.hidden) return;
+    const focus = menu ? modeButtons.find(btn => btn.dataset.mode === mode) || modeButtons[0] : b;
+    focus.focus({ preventScroll: true });
+  }
+
+  function update(dt) {
+    if (status !== "play") return;
+    if (mode === "tetris") { updateTetris(dt); return; }
+
+    buildMask();
+    sandAcc += dt;
+    let steps = 0;
+    while (sandAcc >= SAND_DT && steps < 5) {
+      sandStep();
+      if (mode === "sandstorm" && wind.dir) windPass(wind.dir);
+      sandAcc -= SAND_DT; steps++;
+    }
+    if (steps === 5) sandAcc = 0;
+
+    if (clearing) {
+      clearing.t += dt;
+      if (clearing.t >= CLEAR_TIME) finishClear();
+    } else {
+      checkT += dt;
+      if (checkT >= 0.06) {
+        checkT = 0;
+        const found = findBridges();
+        if (found) startClear(found);
+      }
+      if (chainWindow > 0) { chainWindow -= dt; if (chainWindow <= 0) chain = 0; }
+    }
+
+    if (mode === "quicksand") {
+      riseT += dt;
+      if (riseT >= riseEvery() && !clearing) {
+        riseT = 0;
+        riseFloor();
+        if (status !== "play") return;
+      }
+    } else if (mode === "sandstorm") updateWind(dt);
+
+    if (cur) movePiece(dt);
+  }
+
+  function movePiece(dt) {
+    const dir = (held.right ? 1 : 0) - (held.left ? 1 : 0);
+    if (dir) {
+      moveAcc += dt * moveSpeed();
+      while (moveAcc >= 1) { moveAcc -= 1; if (!tryMove(dir)) { moveAcc = 0; break; } }
+    }
+
+    fallAcc += dt * (held.down ? Math.max(SOFT, fallSpeed()) : fallSpeed());
+    while (fallAcc >= 1) {
+      fallAcc -= 1;
+      if (!collides(cur.cells, cur.px, cur.py + 1)) cur.py++;
+      else { fallAcc = 0; break; }
+    }
+    if (collides(cur.cells, cur.px, cur.py + 1)) {
+      lockT += dt;
+      if (lockT >= LOCK_DELAY) lock();
+    } else lockT = 0;
+  }
+
+  // ---- Rendering ----
+  const color = (ci, s) => PAL[ci * 8 + s];
+
+  function render() {
+    flashT += 1;
+    const flashOn = clearing && (reduceMotion || ((clearing.t * 14) | 0) % 2 === 0);
+    for (let y = 0; y < H; y++) {
+      const row = y * W;
+      for (let x = 0; x < W; x++) {
+        const i = row + x, c = grid[i];
+        if (!c) px[i] = BGROW[x];
+        else if (mark[i] && flashOn) px[i] = WHITE;
+        else px[i] = color(c - 1, shade[i]);
+      }
+    }
+    if (mode === "sandstorm" && wind.phase === "gust" && status !== "ready") drawStreaks();
+    if (cur && status !== "over") {
+      const gy = dropY();
+      if (gy > cur.py) drawPiece(cur, cur.px, gy, true);
+      drawPiece(cur, cur.px, cur.py, false);
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  function drawStreaks() {
+    for (const s of streaks) {
+      const head = Math.round(s.x), row = s.y * W;
+      for (let k = 0; k < s.len; k++) {
+        const x = head - wind.dir * k;
+        if (x < 0 || x >= W || grid[row + x]) continue;
+        px[row + x] = k < 2 ? STREAK_HEAD : STREAK;
+      }
+    }
+  }
+
+  function drawPiece(p, x0p, y0p, ghost) {
+    for (const c of p.cells) {
+      const x0 = x0p + c.x * B, y0 = y0p + c.y * B;
+      for (let ly = 0; ly < B; ly++) {
+        const y = y0 + ly;
+        if (y < 0 || y >= H) continue;
+        for (let lx = 0; lx < B; lx++) {
+          const i = y * W + x0 + lx;
+          if (ghost) {
+            if ((lx === 0 || ly === 0 || lx === B - 1 || ly === B - 1) && !grid[i]) px[i] = GHOST;
+          } else px[i] = color(p.color, c.sh[ly * B + lx]);
+        }
+      }
+    }
+  }
+
+  function drawNext() {
+    npx.fill(0);
+    if (nxt) {
+      const xs = nxt.cells.map(c => c.x), ys = nxt.cells.map(c => c.y);
+      const minX = Math.min(...xs), minY = Math.min(...ys);
+      const bw = Math.max(...xs) - minX + 1, bh = Math.max(...ys) - minY + 1;
+      const ox = ((4 - bw) * B) / 2, oy = ((2 - bh) * B) / 2;
+      for (const c of nxt.cells) {
+        const x0 = ox + (c.x - minX) * B, y0 = oy + (c.y - minY) * B;
+        for (let ly = 0; ly < B; ly++) for (let lx = 0; lx < B; lx++) {
+          npx[(y0 + ly) * 4 * B + x0 + lx] = PAL[nxt.color * 8 + c.sh[ly * B + lx]];
+        }
+      }
+    }
+    nctx.putImageData(nimg, 0, 0);
+  }
+
+  const shown = {};
+  function setText(id, v) {
+    if (shown[id] === v) return;
+    shown[id] = v;
+    $(id).textContent = v;
+  }
+  function hud() {
+    setText("score", score.toLocaleString());
+    setText("best", Math.max(best, score).toLocaleString());
+    setText("level", String(level));
+    setText("clears", String(clears));
+    setText("chain", chain > 1 ? `×${chain}` : "–");
+    modeHud();
+  }
+
+  let shownFill = -1, shownTint = "", shownBlink = false;
+  function modeHud() {
+    const v = $("modeValue");
+    let tint = "", blink = false;
+    if (mode === "quicksand") {
+      const left = status === "ready" ? riseEvery() : Math.max(0, riseEvery() - riseT);
+      setText("modeValue", `${Math.ceil(left)}s`);
+      const fill = Math.round((1 - left / riseEvery()) * 100);
+      if (fill !== shownFill) { shownFill = fill; $("modeFill").style.width = `${fill}%`; }
+      tint = left < 1.5 ? "#e9585c" : "";
+    } else if (mode === "sandstorm") {
+      const d = wind.phase === "warn" ? wind.nextDir : wind.dir;
+      setText("modeValue", wind.phase === "calm" || status === "ready" ? "Calm" : d > 0 ? "Gust →" : "← Gust");
+      tint = wind.phase === "calm" ? "" : "#7fc4d8";
+      blink = wind.phase === "warn" && status === "play";
+    }
+    if (tint !== shownTint) { shownTint = tint; v.style.color = tint; }
+    if (blink !== shownBlink) { shownBlink = blink; v.classList.toggle("blink", blink); }
+  }
+
+  let last = 0;
+  function frame(t) {
+    const dt = Math.min(0.05, (t - last) / 1000 || 0);
+    last = t;
+    update(dt);
+    render();
+    hud();
+    requestAnimationFrame(frame);
+  }
+
+  // ---- Input ----
+  const KEYS = {
+    ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right",
+    ArrowDown: "down", KeyS: "down", ArrowUp: "cw", KeyW: "cw", KeyX: "cw",
+    KeyZ: "ccw", KeyQ: "ccw", Space: "drop", KeyP: "pause", Escape: "pause", Enter: "enter", KeyR: "restart",
+  };
+  function moveMenuFocus(d) {
+    const i = modeButtons.indexOf(document.activeElement);
+    const n = modeButtons.length;
+    modeButtons[i < 0 ? (d > 0 ? 0 : n - 1) : (i + d + n) % n].focus();
+  }
+  window.addEventListener("keydown", e => {
+    const act = KEYS[e.code];
+    if (status === "ready") {
+      if (e.key >= "1" && e.key <= String(MODE_ORDER.length)) { e.preventDefault(); if (!e.repeat) newGame(MODE_ORDER[+e.key - 1]); return; }
+      if (e.code === "ArrowDown" || e.code === "ArrowUp") { e.preventDefault(); moveMenuFocus(e.code === "ArrowDown" ? 1 : -1); return; }
+    }
+    if (!act) return;
+    if (act === "enter" && status === "play") return;
+    // Let a focused overlay button (mode, Play again, Main menu…) handle Enter/Space natively.
+    if ((act === "enter" || act === "drop") && status !== "play" && overlay.contains(document.activeElement) && document.activeElement.tagName === "BUTTON") return;
+    e.preventDefault();
+    if (act === "pause") { togglePause(); return; }
+    if (act === "restart") { if (!e.repeat) restart(); return; }
+    if (act === "enter" || (act === "drop" && status !== "play")) {
+      if (e.repeat) return;
+      if (status === "pause") togglePause(); else if (status !== "play") newGame();
+      return;
+    }
+    if (status !== "play") return;
+    if (act === "left" || act === "right") {
+      if (e.repeat) return;
+      held[act] = true;
+      pressMove(act === "left" ? -1 : 1);
+    } else if (act === "down") held.down = true;
+    else if (e.repeat) return;
+    else if (act === "cw") rotate(1);
+    else if (act === "ccw") rotate(-1);
+    else if (act === "drop") hardDrop();
+  });
+  window.addEventListener("keyup", e => {
+    const act = KEYS[e.code];
+    if (act === "left" || act === "right" || act === "down") held[act] = false;
+  });
+  window.addEventListener("blur", () => {
+    held.left = held.right = held.down = false;
+    if (status === "play") togglePause();
+  });
+
+  for (const btn of modeButtons) {
+    btn.addEventListener("click", () => { btn.blur(); newGame(btn.dataset.mode); });
+  }
+  $("ovBtn").addEventListener("click", e => {
+    e.currentTarget.blur();
+    if (status === "pause") togglePause(); else newGame();
+  });
+  for (const id of ["restartBtn", "ovRestart"]) {
+    $(id).addEventListener("click", e => {
+      e.currentTarget.blur(); // so Space/Enter keep controlling the game, not this button
+      restart();
+    });
+  }
+
+  for (const btn of document.querySelectorAll(".pad button")) {
+    const act = btn.dataset.act;
+    const release = () => {
+      btn.classList.remove("on");
+      if (act === "left" || act === "right" || act === "down") held[act] = false;
+    };
+    btn.addEventListener("pointerdown", e => {
+      e.preventDefault();
+      try { btn.setPointerCapture(e.pointerId); } catch (err) {}
+      btn.classList.add("on");
+      if (status !== "play") return;
+      if (act === "left" || act === "right") { held[act] = true; pressMove(act === "left" ? -1 : 1); }
+      else if (act === "down") held.down = true;
+      else if (act === "rotate") rotate(1);
+      else if (act === "drop") hardDrop();
+    });
+    btn.addEventListener("pointerup", release);
+    btn.addEventListener("pointercancel", release);
+    btn.addEventListener("lostpointercapture", release);
+    btn.addEventListener("contextmenu", e => e.preventDefault());
+  }
+
+  // ---- Keep the game across page updates ----
+  const packPiece = p => p && { n: p.n, color: p.color, px: p.px, py: p.py, cells: p.cells.map(c => ({ x: c.x, y: c.y, sh: Array.from(c.sh) })) };
+  const unpackPiece = p => p && { ...p, cells: p.cells.map(c => ({ x: c.x, y: c.y, sh: Uint8Array.from(c.sh) })) };
+  try {
+    window.claude?.hot?.snapshot?.(() => ({
+      grid: Array.from(grid), shade: Array.from(shade),
+      status: status === "play" ? "pause" : status,
+      mode, score, level, clears, riseT, wind, cur: packPiece(cur), nxt: packPiece(nxt), bag,
+    }));
+  } catch (e) {}
+
+  function start(data) {
+    applyMode();
+    resetWind();
+    try {
+      if (data && data.grid && data.grid.length === N && data.status !== "ready") {
+        if (MODES[data.mode]) { mode = data.mode; applyMode(); }
+        grid.set(data.grid); shade.set(data.shade);
+        score = data.score; level = data.level; clears = data.clears; bag = data.bag || [];
+        riseT = data.riseT || 0;
+        if (data.wind) wind = data.wind;
+        cur = unpackPiece(data.cur); nxt = unpackPiece(data.nxt);
+        status = data.status;
+        drawNext();
+      }
+    } catch (e) { status = "ready"; }
+    showOverlay();
+    requestAnimationFrame(t => { last = t; frame(t); });
+  }
+
+  if (window.claude?.hot?.ready) window.claude.hot.ready(start);
+  else start(window.claude?.hot?.data ?? {});
+})();
+</script>

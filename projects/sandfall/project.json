@@ -1,0 +1,13 @@
+{
+  "name": {
+    "en": "Sandfall",
+    "de": "Sandfall"
+  },
+  "description": {
+    "en": "Tetris with sand physics",
+    "de": "Tetris mit Sand Physik Modell"
+  },
+  "icon": "🎮",
+  "color": "#bbff00",
+  "added": "2026-10-31"
+}
