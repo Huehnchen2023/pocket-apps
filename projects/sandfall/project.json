@@ -4,8 +4,8 @@
     "de": "Sandfall"
   },
   "description": {
-    "en": "Tetris with sand physics",
-    "de": "Tetris mit Sand Physik Modell"
+    "en": "Falling blocks that turn to sand",
+    "de": "Fallende Blöcke, die zu Sand zerfallen"
   },
   "icon": "🎮",
   "color": "#bbff00",

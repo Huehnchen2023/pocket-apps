@@ -1,8 +1,10 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#221d33">
 <title>Sandfall</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Figtree:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
 /* Layout: one dusk-lit hourglass well in the middle, stats on the left, next piece + keys on the right; stacks on phones with a touch pad below. Deliberately single dark theme. */
 :root {
@@ -13,19 +15,23 @@
   --fg: #f1e6d2;
   --muted: #a99fb8;
   --sand: #e8c27a;
-  --font-display: "Bungee", "Impact", "Arial Black", sans-serif;
-  --font-body: "Figtree", "Segoe UI", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
-  --bh: min(78vh, 700px, calc((100vw - 32px) * 2));
+  /* System fonts only, so the game works offline in the launcher */
+  --font-display: "Arial Black", "Avenir Next", Impact, -apple-system, system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --bh: min(78dvh, 700px, calc((100vw - 32px) * 2));
   color-scheme: dark;
 }
-html, body { height: 100%; }
+html, body { height: 100%; margin: 0; }
 body {
   background: radial-gradient(120% 60% at 50% 110%, #3a2c3f 0%, var(--bg) 60%) var(--bg);
   color: var(--fg);
   font-family: var(--font-body);
   font-size: 15px;
   overflow-x: hidden;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
 }
 .app {
   min-height: 100%;
@@ -34,14 +40,15 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 18px;
-  padding-block: 20px 24px;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 20px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 header { text-align: center; }
 h1 {
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 900;
   font-size: clamp(28px, 5vw, 42px);
   letter-spacing: 0.04em;
   margin: 0;
@@ -139,7 +146,7 @@ h1 span:nth-child(4n+4) { color: #5b8cec; }
 .overlay[hidden], .overlay [hidden] { display: none; }
 .overlay h2 {
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 900;
   font-size: clamp(24px, 4vw, 34px);
   margin: 0;
   color: var(--sand);
@@ -162,9 +169,8 @@ h1 span:nth-child(4n+4) { color: #5b8cec; }
   border-radius: 8px;
   cursor: pointer;
 }
-.mode:hover { background: var(--line); }
 .mode:focus-visible { outline: 3px solid var(--fg); outline-offset: 2px; background: var(--line); }
-.mname { font-family: var(--font-display); font-size: 15px; color: var(--accent); }
+.mname { font-family: var(--font-display); font-weight: 900; font-size: 15px; color: var(--accent); }
 .mbest { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
 .mdesc { grid-column: 1 / -1; font-size: 12px; line-height: 1.35; color: var(--muted); }
 .btn {
@@ -178,9 +184,14 @@ h1 span:nth-child(4n+4) { color: #5b8cec; }
   cursor: pointer;
   margin-top: 6px;
 }
-.btn:hover { filter: brightness(1.08); }
 .btn.ghost { color: var(--fg); background: transparent; box-shadow: inset 0 0 0 1px var(--line); margin-top: 0; }
-.btn.ghost:hover { filter: none; background: var(--line); }
+@media (hover: hover) {
+  .mode:hover { background: var(--line); }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost:hover { filter: none; background: var(--line); }
+}
+.mode, .btn { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+.mode:active, .btn:active { transform: scale(0.97); }
 .btn:focus-visible, .pad button:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
 .restart { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 9px 14px; font-size: 13px; }
 .restart svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
@@ -189,6 +200,7 @@ h1 span:nth-child(4n+4) { color: #5b8cec; }
   left: 50%;
   transform: translate(-50%, -50%);
   font-family: var(--font-display);
+  font-weight: 900;
   font-size: clamp(16px, 2.6vw, 22px);
   color: var(--fg);
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6);
@@ -230,28 +242,72 @@ kbd {
 .pad svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 
 @media (max-width: 720px) {
-  :root { --bh: min(58vh, calc((100vw - 32px) * 2)); }
-  .app { gap: 12px; padding-block: 12px 16px; }
+  /* Phone: everything fits one screen without scrolling; the well takes whatever height is left. */
+  .app {
+    height: 100dvh; min-height: 0; gap: 10px;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+  }
+  header { height: 44px; display: flex; align-items: center; justify-content: center; flex: none; }
+  h1 { font-size: 26px; }
   .tagline { display: none; }
   .stage {
+    flex: 1 1 auto; min-height: 0;
     grid-template-columns: 1fr auto;
+    grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas: "stats next" "well well";
-    gap: 12px;
+    gap: 10px;
     width: 100%;
   }
-  .well { justify-self: center; }
-  .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .card { padding: 8px 10px; }
-  .value { font-size: 18px; }
+  .well { justify-self: center; height: 100%; max-height: calc((100vw - 32px) * 2); }
+  .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-content: start; }
+  .card { padding: 6px 10px; }
+  .label { font-size: 10px; }
+  .value { font-size: 17px; }
   .value.small { font-size: 16px; }
-  .restart { grid-column: 1 / -1; padding: 7px 12px; }
+  /* Restart becomes an icon button in the free top-right corner (top-left is the launcher's home button) */
+  .restart {
+    position: fixed; z-index: 5; margin: 0; padding: 0;
+    top: calc(env(safe-area-inset-top, 0px) + 8px); right: max(12px, env(safe-area-inset-right, 0px));
+    width: 44px; height: 44px; border-radius: 12px; background: var(--panel);
+  }
+  .restart span { display: none; }
+  .restart svg { width: 20px; height: 20px; }
   .nextcol { width: 96px; gap: 8px; }
+  #next { margin-top: 4px; }
   .help { display: none; }
-  .pad { display: flex; }
+  .pad { display: flex; flex: none; flex-wrap: nowrap; gap: 8px; width: 100%; }
+  .pad button { width: min(64px, calc((100% - 32px) / 5)); height: 56px; flex: 0 1 auto; }
   .overlay { padding: 12px; gap: 8px; }
   .mode { padding: 7px 9px; }
   .mname { font-size: 13px; }
   .mdesc { font-size: 11px; }
+}
+/* Phone held sideways: drop the title, fit the well to the height, touch pad in the right column */
+@media (orientation: landscape) and (max-height: 520px) {
+  header { display: none; }
+  .app {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    padding-left: max(64px, env(safe-area-inset-left, 0px));
+  }
+  .stage { gap: 16px; grid-template-columns: 150px auto 170px; }
+  .well { height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+  .side { gap: 8px; }
+  .card { padding: 6px 10px; }
+  .value { font-size: 18px; }
+  .value.small { font-size: 16px; }
+  #next { width: 70%; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+  .help { display: none; }
+  .pad {
+    position: fixed; z-index: 4; display: grid; grid-template-columns: repeat(3, 52px); gap: 8px;
+    right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+  }
+  .pad button { width: 52px; height: 52px; }
+  #padRotate { grid-area: 1 / 2; } #padDrop { grid-area: 1 / 3; }
+  #padLeft { grid-area: 2 / 1; } #padDown { grid-area: 2 / 2; } #padRight { grid-area: 2 / 3; }
 }
 @media (hover: none) {
   .pad { display: flex; }
@@ -262,74 +318,131 @@ kbd {
   .blink { animation: none; }
 }
 </style>
+</head>
+<body>
 
 <div class="app">
   <header>
     <h1 aria-label="Sandfall"><span>S</span><span>A</span><span>N</span><span>D</span><span>F</span><span>A</span><span>L</span><span>L</span></h1>
-    <p class="tagline" id="tagline">Blocks turn to sand when they land. Bridge one color from wall to wall to wash it away.</p>
+    <p class="tagline" id="tagline"></p>
   </header>
 
   <main class="stage">
-    <aside class="side stats" aria-label="Stats">
-      <div class="card"><div class="label">Score</div><div class="value" id="score">0</div></div>
-      <div class="card"><div class="label">Best</div><div class="value small" id="best">0</div></div>
-      <div class="card"><div class="label">Level</div><div class="value small" id="level">1</div></div>
-      <div class="card"><div class="label" id="clearsLabel">Bridges</div><div class="value small" id="clears">0</div></div>
-      <button class="btn ghost restart" id="restartBtn" type="button" aria-label="Restart: back to main menu"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v5h5"/></svg>Restart</button>
+    <aside class="side stats" data-t-aria="stats">
+      <div class="card"><div class="label" data-t="score"></div><div class="value" id="score">0</div></div>
+      <div class="card"><div class="label" data-t="best"></div><div class="value small" id="best">0</div></div>
+      <div class="card"><div class="label" data-t="level"></div><div class="value small" id="level">1</div></div>
+      <div class="card"><div class="label" id="clearsLabel"></div><div class="value small" id="clears">0</div></div>
+      <button class="btn ghost restart" id="restartBtn" type="button" data-t-aria="restartAria"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v5h5"/></svg><span data-t="restart"></span></button>
     </aside>
 
     <div class="well" id="well">
-      <canvas id="board" width="80" height="160" aria-label="Game board"></canvas>
+      <canvas id="board" width="80" height="160" data-t-aria="board"></canvas>
       <div class="overlay" id="overlay">
         <h2 id="ovTitle">Sandfall</h2>
-        <p id="ovText">Choose a mode.</p>
+        <p id="ovText"></p>
         <div class="modes" id="menu">
-          <button class="mode" type="button" data-mode="classic" style="--accent: #e8c27a"><span class="mname">Classic</span><span class="mbest"></span><span class="mdesc">Bridge one color from wall to wall to clear it.</span></button>
-          <button class="mode" type="button" data-mode="tetris" style="--accent: #a565d8"><span class="mname">Tetris</span><span class="mbest"></span><span class="mdesc">Solid blocks and full lines, but loose blocks drop into any gap below them.</span></button>
-          <button class="mode" type="button" data-mode="quicksand" style="--accent: #d39a4e"><span class="mname">Quicksand</span><span class="mbest"></span><span class="mdesc">The floor keeps rising with fresh sand. Keep it below the top.</span></button>
-          <button class="mode" type="button" data-mode="sandstorm" style="--accent: #7fc4d8"><span class="mname">Sandstorm</span><span class="mbest"></span><span class="mdesc">Wind gusts blow the sand and your piece sideways.</span></button>
+          <button class="mode" type="button" data-mode="classic" style="--accent: #e8c27a"><span class="mname" data-t="m_classic"></span><span class="mbest"></span><span class="mdesc" data-t="d_classic"></span></button>
+          <button class="mode" type="button" data-mode="tetris" style="--accent: #a565d8"><span class="mname" data-t="m_tetris"></span><span class="mbest"></span><span class="mdesc" data-t="d_tetris"></span></button>
+          <button class="mode" type="button" data-mode="quicksand" style="--accent: #d39a4e"><span class="mname" data-t="m_quicksand"></span><span class="mbest"></span><span class="mdesc" data-t="d_quicksand"></span></button>
+          <button class="mode" type="button" data-mode="sandstorm" style="--accent: #7fc4d8"><span class="mname" data-t="m_sandstorm"></span><span class="mbest"></span><span class="mdesc" data-t="d_sandstorm"></span></button>
         </div>
         <div class="final" id="ovScore" hidden></div>
-        <button class="btn" id="ovBtn" type="button" hidden>Play</button>
-        <button class="btn ghost" id="ovRestart" type="button" hidden>Restart</button>
+        <button class="btn" id="ovBtn" type="button" hidden></button>
+        <button class="btn ghost" id="ovRestart" type="button" hidden></button>
       </div>
     </div>
 
     <aside class="side nextcol">
-      <div class="card"><div class="label">Next</div><canvas id="next" width="32" height="16" aria-label="Next piece"></canvas></div>
-      <div class="card" id="chainCard"><div class="label">Chain</div><div class="value small" id="chain">–</div></div>
+      <div class="card"><div class="label" data-t="next"></div><canvas id="next" width="32" height="16" data-t-aria="nextAria"></canvas></div>
+      <div class="card" id="chainCard"><div class="label" data-t="chain"></div><div class="value small" id="chain">–</div></div>
       <div class="card" id="modeCard" hidden>
         <div class="label" id="modeLabel"></div>
         <div class="value small" id="modeValue"></div>
         <div class="bar" id="modeBar" hidden><i id="modeFill"></i></div>
       </div>
       <div class="card help">
-        <div class="label">Keys</div>
+        <div class="label" data-t="keys"></div>
         <div class="keys">
-          <kbd>← →</kbd><span>Move</span>
-          <kbd>↑ / X</kbd><span>Rotate</span>
-          <kbd>Z</kbd><span>Rotate back</span>
-          <kbd>↓</kbd><span>Soft drop</span>
-          <kbd>Space</kbd><span>Hard drop</span>
-          <kbd>P</kbd><span>Pause</span>
-          <kbd>R</kbd><span>Restart</span>
-          <kbd>1–4</kbd><span>Pick mode</span>
+          <kbd>← →</kbd><span data-t="k_move"></span>
+          <kbd>↑ / X</kbd><span data-t="k_rotate"></span>
+          <kbd>Z</kbd><span data-t="k_ccw"></span>
+          <kbd>↓</kbd><span data-t="k_soft"></span>
+          <kbd data-t="spaceKey"></kbd><span data-t="k_hard"></span>
+          <kbd>P</kbd><span data-t="k_pause"></span>
+          <kbd>R</kbd><span data-t="restart"></span>
+          <kbd>1–4</kbd><span data-t="k_mode"></span>
         </div>
       </div>
     </aside>
   </main>
 
   <div class="pad" id="pad">
-    <button type="button" id="padLeft" data-act="left" aria-label="Move left"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
-    <button type="button" id="padRotate" data-act="rotate" aria-label="Rotate"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 1-3-6.2"/><path d="M20 4v5h-5"/></svg></button>
-    <button type="button" id="padDown" data-act="down" aria-label="Soft drop"><svg viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></svg></button>
-    <button type="button" id="padDrop" data-act="drop" aria-label="Hard drop"><svg viewBox="0 0 24 24"><path d="M6 6l6 6 6-6"/><path d="M6 12l6 6 6-6"/></svg></button>
-    <button type="button" id="padRight" data-act="right" aria-label="Move right"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+    <button type="button" id="padLeft" data-act="left" data-t-aria="a_left"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button type="button" id="padRotate" data-act="rotate" data-t-aria="k_rotate"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 1-3-6.2"/><path d="M20 4v5h-5"/></svg></button>
+    <button type="button" id="padDown" data-act="down" data-t-aria="k_soft"><svg viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></svg></button>
+    <button type="button" id="padDrop" data-act="drop" data-t-aria="k_hard"><svg viewBox="0 0 24 24"><path d="M6 6l6 6 6-6"/><path d="M6 12l6 6 6-6"/></svg></button>
+    <button type="button" id="padRight" data-act="right" data-t-aria="a_right"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
   </div>
 </div>
 
 <script>
 (() => {
+  // ---- Language: launcher setting (pocket.lang), else the device language ----
+  const lang = localStorage.getItem("pocket.lang") ||
+    ((navigator.language || "en").toLowerCase().startsWith("de") ? "de" : "en");
+  const STR = {
+    en: {
+      stats: "Stats", score: "Score", best: "Best", level: "Level", bridges: "Bridges", lines: "Lines",
+      restart: "Restart", restartAria: "Restart: back to main menu", board: "Game board",
+      next: "Next", nextAria: "Next piece", chain: "Chain", keys: "Keys", spaceKey: "Space",
+      k_move: "Move", k_rotate: "Rotate", k_ccw: "Rotate back", k_soft: "Soft drop", k_hard: "Hard drop",
+      k_pause: "Pause", k_mode: "Pick mode", a_left: "Move left", a_right: "Move right",
+      m_classic: "Classic", m_tetris: "Tetris", m_quicksand: "Quicksand", m_sandstorm: "Sandstorm",
+      d_classic: "Bridge one color from wall to wall to clear it.",
+      d_tetris: "Solid blocks and full lines, but loose blocks drop into any gap below them.",
+      d_quicksand: "The floor keeps rising with fresh sand. Keep it below the top.",
+      d_sandstorm: "Wind gusts blow the sand and your piece sideways.",
+      t_classic: "Blocks turn to sand when they land. Bridge one color from wall to wall to wash it away.",
+      t_tetris: "Blocks stay solid, but any block with space below it drops down. Fill whole lines to clear them.",
+      t_quicksand: "The floor keeps rising with fresh sand. Clear bridges faster than it buries you.",
+      t_sandstorm: "Gusts blow the sand and your piece sideways. Read the wind and build your bridges anyway.",
+      o_classic: "The sand reached the top.", o_tetris: "The blocks reached the top.",
+      o_quicksand: "The quicksand swallowed the well.", o_sandstorm: "Buried by the storm.",
+      floorRises: "Floor rises", wind: "Wind", calm: "Calm", gustR: "Gust →", gustL: "← Gust",
+      chooseMode: "Choose a mode.", bestN: n => `Best ${n}`, paused: "Paused", pausedText: "The sand waits for you.",
+      resume: "Resume", buried: "Buried", points: n => `${n} points`, playAgain: "Play again", mainMenu: "Main menu",
+      tetrisPop: "Tetris!", cascade: n => `Cascade ×${n}`, chainPop: n => `Chain ×${n}`,
+    },
+    de: {
+      stats: "Statistik", score: "Punkte", best: "Rekord", level: "Level", bridges: "Brücken", lines: "Reihen",
+      restart: "Neustart", restartAria: "Neustart: zurück zum Hauptmenü", board: "Spielfeld",
+      next: "Nächster", nextAria: "Nächster Stein", chain: "Kette", keys: "Tasten", spaceKey: "Leertaste",
+      k_move: "Bewegen", k_rotate: "Drehen", k_ccw: "Zurückdrehen", k_soft: "Schneller fallen", k_hard: "Fallen lassen",
+      k_pause: "Pause", k_mode: "Modus wählen", a_left: "Nach links", a_right: "Nach rechts",
+      m_classic: "Klassisch", m_tetris: "Tetris", m_quicksand: "Treibsand", m_sandstorm: "Sandsturm",
+      d_classic: "Verbinde eine Farbe von Wand zu Wand, um sie aufzulösen.",
+      d_tetris: "Feste Blöcke und volle Reihen, aber lose Blöcke rutschen in jede Lücke darunter.",
+      d_quicksand: "Der Boden steigt ständig mit frischem Sand. Halte ihn unter dem Rand.",
+      d_sandstorm: "Windböen wehen den Sand und deinen Stein zur Seite.",
+      t_classic: "Blöcke zerfallen beim Landen zu Sand. Verbinde eine Farbe von Wand zu Wand, um sie wegzuspülen.",
+      t_tetris: "Blöcke bleiben fest, aber alles mit Platz darunter fällt nach unten. Fülle ganze Reihen, um sie zu löschen.",
+      t_quicksand: "Der Boden steigt ständig mit frischem Sand. Baue Brücken schneller, als er dich begräbt.",
+      t_sandstorm: "Böen wehen den Sand und deinen Stein zur Seite. Lies den Wind und baue trotzdem Brücken.",
+      o_classic: "Der Sand hat den Rand erreicht.", o_tetris: "Die Blöcke haben den Rand erreicht.",
+      o_quicksand: "Der Treibsand hat alles verschluckt.", o_sandstorm: "Vom Sturm begraben.",
+      floorRises: "Boden steigt", wind: "Wind", calm: "Ruhig", gustR: "Böe →", gustL: "← Böe",
+      chooseMode: "Wähle einen Modus.", bestN: n => `Rekord ${n}`, paused: "Pause", pausedText: "Der Sand wartet auf dich.",
+      resume: "Weiter", buried: "Begraben", points: n => `${n} Punkte`, playAgain: "Nochmal", mainMenu: "Hauptmenü",
+      tetrisPop: "Tetris!", cascade: n => `Kaskade ×${n}`, chainPop: n => `Kette ×${n}`,
+    },
+  };
+  const T = STR[lang] || STR.en;
+  const fmt = n => n.toLocaleString(lang);
+  document.documentElement.lang = lang;
+  for (const el of document.querySelectorAll("[data-t]")) el.textContent = T[el.dataset.t];
+  for (const el of document.querySelectorAll("[data-t-aria]")) el.setAttribute("aria-label", T[el.dataset.tAria]);
+
   // ---- Board geometry: each tetromino block is B×B sand grains ----
   const B = 8, COLS = 10, ROWS = 20, W = COLS * B, H = ROWS * B, N = W * H;
   const grid = new Uint8Array(N);   // 0 empty, else color index + 1
@@ -355,24 +468,7 @@ kbd {
   const LINE_SCORE = [0, 100, 300, 500, 800];
 
   // ---- Modes ----
-  const MODES = {
-    classic: {
-      tag: "Blocks turn to sand when they land. Bridge one color from wall to wall to wash it away.",
-      over: "The sand reached the top.",
-    },
-    tetris: {
-      tag: "Blocks stay solid, but any block with space below it drops down. Fill whole lines to clear them.",
-      over: "The blocks reached the top.",
-    },
-    quicksand: {
-      tag: "The floor keeps rising with fresh sand. Clear bridges faster than it buries you.",
-      over: "The quicksand swallowed the well.",
-    },
-    sandstorm: {
-      tag: "Gusts blow the sand and your piece sideways. Read the wind and build your bridges anyway.",
-      over: "Buried by the storm.",
-    },
-  };
+  const MODES = Object.fromEntries(["classic", "tetris", "quicksand", "sandstorm"].map(m => [m, { tag: T["t_" + m], over: T["o_" + m] }]));
   const MODE_ORDER = ["classic", "tetris", "quicksand", "sandstorm"];
 
   // ---- Colors ----
@@ -442,10 +538,10 @@ kbd {
     PAL = mode === "tetris" ? PAL_TETRIS : PAL_CLASSIC;
     best = loadBest(mode);
     $("tagline").textContent = MODES[mode].tag;
-    $("clearsLabel").textContent = mode === "tetris" ? "Lines" : "Bridges";
+    $("clearsLabel").textContent = mode === "tetris" ? T.lines : T.bridges;
     $("modeCard").hidden = mode === "classic" || mode === "tetris";
     $("modeBar").hidden = mode !== "quicksand";
-    $("modeLabel").textContent = { quicksand: "Floor rises", sandstorm: "Wind" }[mode] || "";
+    $("modeLabel").textContent = { quicksand: T.floorRises, sandstorm: T.wind }[mode] || "";
     $("modeValue").style.color = "";
     try { localStorage.setItem("sandfall-mode", mode); } catch (e) {}
   }
@@ -602,9 +698,9 @@ kbd {
     score += gained;
     level = Math.min(15, 1 + Math.floor(clears / 8));
     clearing = { t: 0 };
-    popup(`+${gained.toLocaleString()}`, found.y);
-    if (found.lines === 4) popup("Tetris!", found.y - 14);
-    else if (chain > 1) popup(`Cascade ×${chain}`, found.y - 14);
+    popup(`+${fmt(gained)}`, found.y);
+    if (found.lines === 4) popup(T.tetrisPop, found.y - 14);
+    else if (chain > 1) popup(T.cascade(chain), found.y - 14);
   }
 
   function updateTetris(dt) {
@@ -719,8 +815,8 @@ kbd {
     score += gained;
     level = Math.min(15, 1 + Math.floor(clears / 4));
     clearing = { t: 0 };
-    popup(`+${gained.toLocaleString()}`, found.y);
-    if (chain > 1) popup(`Chain ×${chain}`, found.y - 14);
+    popup(`+${fmt(gained)}`, found.y);
+    if (chain > 1) popup(T.chainPop(chain), found.y - 14);
   }
 
   function finishClear() {
@@ -757,7 +853,7 @@ kbd {
       if (wind.phase === "calm") {
         wind.phase = "warn"; wind.t = 1.5;
         wind.nextDir = Math.random() < 0.5 ? -1 : 1;
-        popup(wind.nextDir > 0 ? "Gust →" : "← Gust", H * 0.28);
+        popup(wind.nextDir > 0 ? T.gustR : T.gustL, H * 0.28);
       } else if (wind.phase === "warn") {
         wind.phase = "gust"; wind.dir = wind.nextDir;
         wind.t = 2.5 + Math.random() * 1.5 + Math.min(2, level * 0.15);
@@ -859,20 +955,20 @@ kbd {
     r.hidden = menu;
     if (menu) {
       t.textContent = "Sandfall";
-      p.textContent = "Choose a mode.";
+      p.textContent = T.chooseMode;
       $("tagline").textContent = MODES[mode].tag;
-      for (const btn of modeButtons) btn.querySelector(".mbest").textContent = `Best ${loadBest(btn.dataset.mode).toLocaleString()}`;
+      for (const btn of modeButtons) btn.querySelector(".mbest").textContent = T.bestN(fmt(loadBest(btn.dataset.mode)));
     } else if (status === "pause") {
-      t.textContent = "Paused";
-      p.textContent = "The sand waits for you.";
-      b.textContent = "Resume";
-      r.textContent = "Restart";
+      t.textContent = T.paused;
+      p.textContent = T.pausedText;
+      b.textContent = T.resume;
+      r.textContent = T.restart;
     } else if (status === "over") {
-      t.textContent = "Buried";
+      t.textContent = T.buried;
       p.textContent = MODES[mode].over;
-      s.textContent = `${score.toLocaleString()} points`;
-      b.textContent = "Play again";
-      r.textContent = "Main menu";
+      s.textContent = T.points(fmt(score));
+      b.textContent = T.playAgain;
+      r.textContent = T.mainMenu;
     }
     if (overlay.hidden) return;
     const focus = menu ? modeButtons.find(btn => btn.dataset.mode === mode) || modeButtons[0] : b;
@@ -1012,8 +1108,8 @@ kbd {
     $(id).textContent = v;
   }
   function hud() {
-    setText("score", score.toLocaleString());
-    setText("best", Math.max(best, score).toLocaleString());
+    setText("score", fmt(score));
+    setText("best", fmt(Math.max(best, score)));
     setText("level", String(level));
     setText("clears", String(clears));
     setText("chain", chain > 1 ? `×${chain}` : "–");
@@ -1032,7 +1128,7 @@ kbd {
       tint = left < 1.5 ? "#e9585c" : "";
     } else if (mode === "sandstorm") {
       const d = wind.phase === "warn" ? wind.nextDir : wind.dir;
-      setText("modeValue", wind.phase === "calm" || status === "ready" ? "Calm" : d > 0 ? "Gust →" : "← Gust");
+      setText("modeValue", wind.phase === "calm" || status === "ready" ? T.calm : d > 0 ? T.gustR : T.gustL);
       tint = wind.phase === "calm" ? "" : "#7fc4d8";
       blink = wind.phase === "warn" && status === "play";
     }
@@ -1135,16 +1231,35 @@ kbd {
     btn.addEventListener("contextmenu", e => e.preventDefault());
   }
 
-  // ---- Keep the game across page updates ----
+  // ---- Keep the game when leaving the app (launcher home button, app switch) ----
+  // Grid and shade values are all 0–8, so each grain is stored as one digit.
+  const SAVE_KEY = "sandfall-save";
   const packPiece = p => p && { n: p.n, color: p.color, px: p.px, py: p.py, cells: p.cells.map(c => ({ x: c.x, y: c.y, sh: Array.from(c.sh) })) };
   const unpackPiece = p => p && { ...p, cells: p.cells.map(c => ({ x: c.x, y: c.y, sh: Uint8Array.from(c.sh) })) };
-  try {
-    window.claude?.hot?.snapshot?.(() => ({
-      grid: Array.from(grid), shade: Array.from(shade),
-      status: status === "play" ? "pause" : status,
-      mode, score, level, clears, riseT, wind, cur: packPiece(cur), nxt: packPiece(nxt), bag,
-    }));
-  } catch (e) {}
+  const unpackDigits = str => Uint8Array.from(str, ch => +ch);
+  function saveGame() {
+    try {
+      if (status !== "play" && status !== "pause") { localStorage.removeItem(SAVE_KEY); return; }
+      localStorage.setItem(SAVE_KEY, JSON.stringify({
+        grid: grid.join(""), shade: shade.join(""), status: "pause",
+        mode, score, level, clears, riseT, wind, cur: packPiece(cur), nxt: packPiece(nxt), bag,
+      }));
+    } catch (e) {}
+  }
+  function loadGame() {
+    try {
+      const d = JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
+      if (d && typeof d.grid === "string") { d.grid = unpackDigits(d.grid); d.shade = unpackDigits(d.shade); }
+      return d || {};
+    } catch (e) { return {}; }
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) return;
+    held.left = held.right = held.down = false;
+    if (status === "play") togglePause();
+    saveGame();
+  });
+  window.addEventListener("pagehide", saveGame);
 
   function start(data) {
     applyMode();
@@ -1165,7 +1280,8 @@ kbd {
     requestAnimationFrame(t => { last = t; frame(t); });
   }
 
-  if (window.claude?.hot?.ready) window.claude.hot.ready(start);
-  else start(window.claude?.hot?.data ?? {});
+  start(loadGame());
 })();
 </script>
+</body>
+</html>
