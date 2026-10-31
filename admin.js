@@ -47,6 +47,10 @@
               done: '✓ Uploaded! Waiting for the site to update (about 1 minute)…',
               live: '✓ Live! Open the launcher to see it.', slow: 'Still building. Check the launcher in a minute.' },
       expired: 'Your token expired or was revoked. Please set up again.',
+      manageTitle: 'Your apps', manageIntro: 'Remove an app from the launcher. Tap Remove, then tap again to confirm.',
+      noApps: 'No apps yet.', remove: 'Remove', removeConfirm: 'Tap to confirm',
+      removing: 'Removing', removed: '✓ Removed. The launcher updates in about 1 minute.',
+      removedLive: '✓ Gone from the launcher.', notFound: 'This app is no longer in the repo.',
     },
     de: {
       back: '← Launcher', title: 'Dashboard',
@@ -80,6 +84,10 @@
               done: '✓ Hochgeladen! Warte, bis die Seite aktualisiert ist (ca. 1 Minute)…',
               live: '✓ Live! Öffne den Launcher, um sie zu sehen.', slow: 'Wird noch gebaut. Schau in einer Minute im Launcher nach.' },
       expired: 'Dein Token ist abgelaufen oder wurde widerrufen. Bitte neu einrichten.',
+      manageTitle: 'Deine Apps', manageIntro: 'Entferne eine App aus dem Launcher. Tippe auf Entfernen und zur Bestätigung noch einmal.',
+      noApps: 'Noch keine Apps.', remove: 'Entfernen', removeConfirm: 'Zum Bestätigen tippen',
+      removing: 'Wird entfernt', removed: '✓ Entfernt. Der Launcher aktualisiert sich in ca. 1 Minute.',
+      removedLive: '✓ Aus dem Launcher verschwunden.', notFound: 'Diese App ist nicht mehr im Repo.',
     },
   };
   let lang = localStorage.getItem(LANG_KEY) ||
@@ -92,6 +100,7 @@
     document.querySelectorAll('[data-t]').forEach(el => { el.textContent = t(el.dataset.t); });
     document.querySelectorAll('[data-t-html]').forEach(el => { el.innerHTML = t(el.dataset.tHtml); });
     updateIdNote();
+    renderApps();
   }
   $('lang').addEventListener('click', () => {
     lang = lang === 'de' ? 'en' : 'de';
@@ -151,6 +160,33 @@
     return res.status === 204 ? null : res.json();
   }
 
+  // Reads the current head of the branch, with the full file list.
+  async function getHead() {
+    const ref = await gh(`/repos/${REPO}/git/ref/heads/${BRANCH}`);
+    const headSha = ref.object.sha;
+    const head = await gh(`/repos/${REPO}/git/commits/${headSha}`);
+    const tree = await gh(`/repos/${REPO}/git/trees/${head.tree.sha}?recursive=1`);
+    return { headSha, treeSha: head.tree.sha, files: tree.tree.filter(e => e.type === 'blob').map(e => e.path) };
+  }
+
+  // Commits tree changes (entries with sha: null delete a file) on top of the head and moves the branch.
+  async function commitChanges({ headSha, treeSha }, entries, message) {
+    const newTree = await gh(`/repos/${REPO}/git/trees`, {
+      method: 'POST', body: JSON.stringify({ base_tree: treeSha, tree: entries }),
+    });
+    const now = new Date().toISOString();
+    const commit = await gh(`/repos/${REPO}/git/commits`, {
+      method: 'POST',
+      body: JSON.stringify({
+        message, tree: newTree.sha, parents: [headSha],
+        author: { ...AUTHOR, date: now }, committer: { ...AUTHOR, date: now },
+      }),
+    });
+    await gh(`/repos/${REPO}/git/refs/heads/${BRANCH}`, {
+      method: 'PATCH', body: JSON.stringify({ sha: commit.sha }),
+    });
+  }
+
   async function checkToken(tok) {
     try {
       const repo = await gh(`/repos/${REPO}`, {}, tok);
@@ -163,6 +199,7 @@
   // ---------- Screens ----------
   function show(screen) {
     for (const id of ['setup', 'unlock', 'upload']) $(id).hidden = id !== screen;
+    $('manage').hidden = screen !== 'upload';
   }
   const msg = (id, text, ok) => { const el = $(id); el.textContent = text || ''; el.classList.toggle('ok', !!ok); };
 
@@ -320,12 +357,98 @@
     $('upload-btn').textContent = t(exists ? 'updateBtn' : 'uploadBtn');
   }
 
+  let projects = [];
   async function loadExistingIds() {
     try {
-      const data = await (await fetch('projects.json', { cache: 'no-store' })).json();
-      existingIds = new Set(data.projects.map(p => p.id));
+      const data = await (await fetch('projects.json?t=' + Date.now(), { cache: 'no-store' })).json();
+      projects = data.projects;
+      existingIds = new Set(projects.map(p => p.id));
+      renderApps();
       return data.version;
     } catch { return ''; }
+  }
+
+  // ---------- Manage: list and remove apps ----------
+  const removedIds = new Set(); // removed this session; projects.json lags behind for a minute
+  const pickName = v => (v && typeof v === 'object') ? (v[lang] || v.en || v.de || '') : (v || '');
+
+  function renderApps() {
+    const list = $('app-list');
+    if (!list) return;
+    list.innerHTML = '';
+    const shown = projects.filter(p => !removedIds.has(p.id));
+    if (!shown.length) {
+      list.innerHTML = `<li class="muted">${t('noApps')}</li>`;
+      return;
+    }
+    for (const p of shown) {
+      const li = document.createElement('li');
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.style.backgroundColor = p.color || '#7c6cff';
+      if (p.iconImage) tile.style.backgroundImage = `url("${p.iconImage}")`;
+      else tile.textContent = p.icon || '🎮';
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = pickName(p.name) || p.id;
+      const small = document.createElement('small');
+      small.textContent = p.id;
+      name.appendChild(small);
+      const btn = document.createElement('button');
+      btn.className = 'remove';
+      btn.textContent = t('remove');
+      btn.addEventListener('click', () => onRemoveTap(btn, p));
+      li.append(tile, name, btn);
+      list.appendChild(li);
+    }
+  }
+
+  // Two taps: the first arms the button for a few seconds, the second removes.
+  function onRemoveTap(btn, p) {
+    if (!btn.classList.contains('armed')) {
+      btn.classList.add('armed');
+      btn.textContent = t('removeConfirm');
+      clearTimeout(btn.disarm);
+      btn.disarm = setTimeout(() => { btn.classList.remove('armed'); btn.textContent = t('remove'); }, 4000);
+      return;
+    }
+    clearTimeout(btn.disarm);
+    removeApp(p, btn);
+  }
+
+  function manageLog(line, append) {
+    const el = $('manage-log');
+    el.hidden = !line && !append;
+    el.textContent = append ? el.textContent + '\n' + line : line;
+  }
+
+  async function removeApp(p, btn) {
+    if (!token) return;
+    document.querySelectorAll('button.remove').forEach(b => { b.disabled = true; });
+    const name = pickName(p.name) || p.id;
+    try {
+      manageLog(`${t('removing')}: ${name}…`);
+      const before = (await loadExistingIds()) || '';
+      const head = await getHead();
+      const prefix = `projects/${p.id}/`;
+      const files = head.files.filter(path => path.startsWith(prefix));
+      if (!files.length) { manageLog('✗ ' + t('notFound')); return; }
+      const enName = (p.name && typeof p.name === 'object' ? p.name.en : p.name) || p.id;
+      await commitChanges(head, files.map(path => ({ path, mode: '100644', type: 'blob', sha: null })),
+        `Remove ${enName} (via dashboard)`);
+      removedIds.add(p.id);
+      existingIds.delete(p.id);
+      renderApps();
+      manageLog(t('removed'));
+      const gone = await waitForVersion(before, data => !data.projects.some(x => x.id === p.id));
+      manageLog(gone ? t('removedLive') : t('step').slow, true);
+    } catch (e) {
+      if (e.status === 401) { token = null; alertMsgThenSetup(); }
+      manageLog('✗ ' + e.message, true);
+    } finally {
+      document.querySelectorAll('button.remove').forEach(b => { b.disabled = false; });
+      if (btn.isConnected) { btn.classList.remove('armed'); btn.textContent = t('remove'); }
+    }
   }
 
   function enterUpload() {
@@ -424,12 +547,10 @@
       };
       files.push({ path: 'project.json', bytes: enc.encode(JSON.stringify(meta, null, 2) + '\n') });
 
-      const ref = await gh(`/repos/${REPO}/git/ref/heads/${BRANCH}`);
-      const headSha = ref.object.sha;
-      const head = await gh(`/repos/${REPO}/git/commits/${headSha}`);
-      const tree = await gh(`/repos/${REPO}/git/trees/${head.tree.sha}?recursive=1`);
+      const head = await getHead();
+      const headSha = head.headSha;
       const prefix = `projects/${id}/`;
-      const existing = tree.tree.filter(e => e.type === 'blob' && e.path.startsWith(prefix)).map(e => e.path);
+      const existing = head.files.filter(path => path.startsWith(prefix));
       const isUpdate = existing.length > 0;
       // Keep the original "added" date when updating.
       if (isUpdate) {
@@ -457,29 +578,15 @@
       }
 
       log(t('step').commit);
-      const newTree = await gh(`/repos/${REPO}/git/trees`, {
-        method: 'POST', body: JSON.stringify({ base_tree: head.tree.sha, tree: entries }),
-      });
-      const now = new Date().toISOString();
-      const commit = await gh(`/repos/${REPO}/git/commits`, {
-        method: 'POST',
-        body: JSON.stringify({
-          message: `${isUpdate ? 'Update' : 'Add'} ${meta.name.en} (via dashboard)`,
-          tree: newTree.sha,
-          parents: [headSha],
-          author: { ...AUTHOR, date: now },
-          committer: { ...AUTHOR, date: now },
-        }),
-      });
-      await gh(`/repos/${REPO}/git/refs/heads/${BRANCH}`, {
-        method: 'PATCH', body: JSON.stringify({ sha: commit.sha }),
-      });
+      await commitChanges(head, entries, `${isUpdate ? 'Update' : 'Add'} ${meta.name.en} (via dashboard)`);
 
       log(t('step').done);
-      const live = await waitForLive(id, before);
+      const live = await waitForVersion(before, data => data.projects.some(p => p.id === id));
       log(live ? t('step').live : t('step').slow, true);
       existingIds.add(id);
+      removedIds.delete(id);
       resetUpload();
+      loadExistingIds();
     } catch (e) {
       if (e.status === 401) { token = null; alertMsgThenSetup(); }
       log('✗ ' + e.message, true);
@@ -488,13 +595,14 @@
     }
   });
 
-  async function waitForLive(id, oldVersion) {
+  // Polls the published projects.json until a new version satisfies `done` (max 4 minutes).
+  async function waitForVersion(oldVersion, done) {
     const until = Date.now() + 4 * 60 * 1000;
     while (Date.now() < until) {
       await new Promise(r => setTimeout(r, 6000));
       try {
         const data = await (await fetch('projects.json?t=' + Date.now(), { cache: 'no-store' })).json();
-        if (data.version !== oldVersion && data.projects.some(p => p.id === id)) return true;
+        if (data.version !== oldVersion && done(data)) return true;
       } catch {}
     }
     return false;

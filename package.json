@@ -7,6 +7,7 @@
     "build": "node tools/build.mjs",
     "icons": "node tools/make-icons.mjs",
     "serve": "npx --yes http-server . -p 8080 -c-1",
-    "deploy": "node tools/deploy.mjs"
+    "deploy": "node tools/deploy.mjs",
+    "remove": "node tools/remove.mjs"
   }
 }
